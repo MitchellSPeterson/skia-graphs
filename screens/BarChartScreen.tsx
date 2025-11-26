@@ -1,30 +1,48 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { BarChart } from '../src';
 
-const barData = Array.from({ length: 7 }, (_, i) => ({
+const generateData = () => Array.from({ length: 7 }, (_, i) => ({
     x: i,
-    y: Math.random() * 100,
+    y: Math.random() * 100 + 20,
+    label: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
     color: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD', '#D4A5A5', '#9B59B6'][i],
 }));
 
 export default function BarChartScreen() {
+    const [data, setData] = useState(generateData());
+
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
             <Text style={styles.title}>Bar Chart</Text>
             <Text style={styles.description}>
-                Animated bar chart with rounded corners and gradient fills.
+                Animated bar chart with bounce effect and full customization.
             </Text>
 
             <View style={styles.chartContainer}>
-                <BarChart data={barData} width={350} height={200} />
+                <BarChart
+                    data={data}
+                    width={350}
+                    height={250}
+                    title="Weekly Revenue"
+                    yAxisTitle="Revenue ($)"
+                    xAxisTitle="Day of Week"
+                    showGrid
+                    showValues
+                    tooltipFormatter={(point) => `$${point.y.toFixed(2)}`}
+                />
             </View>
 
+            <TouchableOpacity style={styles.button} onPress={() => setData(generateData())}>
+                <Text style={styles.buttonText}>Randomize Data</Text>
+            </TouchableOpacity>
+
             <Text style={styles.subtitle}>Features:</Text>
-            <Text style={styles.feature}>• Rounded bar tops</Text>
-            <Text style={styles.feature}>• Gradient fills</Text>
-            <Text style={styles.feature}>• Fade-in animation</Text>
-            <Text style={styles.feature}>• Auto color cycling</Text>
+            <Text style={styles.feature}>• Bounce animation on entry/update</Text>
+            <Text style={styles.feature}>• Rounded bar tops & Gradient fills</Text>
+            <Text style={styles.feature}>• Custom titles and axis labels</Text>
+            <Text style={styles.feature}>• Interactive tooltips (tap bar)</Text>
+            <Text style={styles.feature}>• Auto-scaling axes</Text>
         </ScrollView>
     );
 }
@@ -52,6 +70,7 @@ const styles = StyleSheet.create({
     },
     chartContainer: {
         marginVertical: 20,
+        alignItems: 'center',
     },
     subtitle: {
         fontSize: 20,
@@ -66,5 +85,17 @@ const styles = StyleSheet.create({
         color: '#aaa',
         marginBottom: 5,
         alignSelf: 'flex-start',
+    },
+    button: {
+        backgroundColor: '#00d2ff',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 8,
+        marginTop: 10,
+        marginBottom: 20,
+    },
+    buttonText: {
+        color: '#000',
+        fontWeight: 'bold',
     },
 });

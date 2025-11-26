@@ -56,13 +56,16 @@ A smooth, animated line graph with optional gradient fill.
 
 ### BarChart
 
-An animated bar chart with rounded corners and gradient bars.
+An animated bar chart with bounce effects, rounded corners, gradient fills, and full customization.
 
 ```tsx
 <BarChart 
   data={[{ x: 0, y: 50, color: 'red' }, ...]} 
   width={350} 
   height={200} 
+  title="Revenue"
+  showGrid
+  showValues
 />
 ```
 
@@ -73,10 +76,15 @@ An animated bar chart with rounded corners and gradient bars.
 | `data` | `GraphPoint[]` | Required | Array of `{ x, y, color? }` points. |
 | `width` | `number` | `Screen Width - 32` | Width of the chart. |
 | `height` | `number` | `200` | Height of the chart. |
-| `barWidth` | `number` | `auto` | Width of each bar. |
-| `spacing` | `number` | `10` | Spacing between bars. |
+| `spacing` | `number` | `0.2` | Inner padding between bars (0-1). |
 | `roundedTop` | `boolean` | `true` | Whether bars have rounded tops. |
 | `colors` | `string[]` | `['#00d2ff', ...]` | Array of colors to cycle through. |
+| `title` | `string` | `undefined` | Chart title. |
+| `xAxisTitle` | `string` | `undefined` | X-axis title. |
+| `yAxisTitle` | `string` | `undefined` | Y-axis title. |
+| `showGrid` | `boolean` | `true` | Show background grid. |
+| `showValues` | `boolean` | `false` | Show values on top of bars. |
+| `showTooltip` | `boolean` | `true` | Enable interactive tooltips. |
 
 ### PieChart
 

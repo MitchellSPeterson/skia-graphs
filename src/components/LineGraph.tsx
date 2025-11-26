@@ -14,14 +14,14 @@ import * as d3Scale from 'd3-scale';
 import * as d3Shape from 'd3-shape';
 import * as d3Array from 'd3-array';
 import { LineGraphProps, GraphPoint } from '../types';
-import { useSharedValue, withTiming, Easing } from 'react-native-reanimated';
+import { useSharedValue, withTiming, Easing, useDerivedValue, runOnJS } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DEFAULT_WIDTH = SCREEN_WIDTH - 32;
 const DEFAULT_HEIGHT = 200;
 
 export const LineGraph: React.FC<LineGraphProps> = ({
-    data,
+    data: incomingData,
     width = DEFAULT_WIDTH,
     height = DEFAULT_HEIGHT,
     color = '#00d2ff',
@@ -48,43 +48,45 @@ export const LineGraph: React.FC<LineGraphProps> = ({
     titleSize = 16,
     xAxisTitle,
     yAxisTitle,
-    axisTitleColor = 'rgba(255, 255, 255, 0.8)',
-    axisTitleSize = 12,
+    axisTitleColor = '#ccc',
+    axisTitleSize = 14,
 
-    // Formatting
-    xAxisFormatter = (value) => value.toFixed(0),
-    yAxisFormatter = (value) => value.toFixed(0),
-
-    // Tooltip
-    showTooltip = true,
-    tooltipBackgroundColor = 'rgba(0, 0, 0, 0.8)',
-    tooltipTextColor = '#fff',
+    // Customization
+    fillOpacity = 0.2,
+    tension = 0.3,
+    xAxisFormatter = (value) => value.toFixed(1),
+    yAxisFormatter = (value) => value.toFixed(1),
     tooltipFormatter,
 
-    // Data points
+    // Points
     showPoints = false,
     pointRadius = 4,
     pointColor,
     pointBorderColor = '#fff',
     pointBorderWidth = 2,
 
-    // Fill options
-    fillOpacity = 0.2,
-
-    // Curve tension
-    tension = 0.5,
+    // Tooltip
+    showTooltip = true,
+    tooltipBackgroundColor = 'rgba(0, 0, 0, 0.8)',
+    tooltipTextColor = '#fff',
 }) => {
-    const padding = title ? 40 : 20;
+    const padding = 20;
     const bottomPadding = xAxisTitle ? 50 : 30;
     const leftPadding = yAxisTitle ? 50 : 30;
 
     const [selectedPoint, setSelectedPoint] = useState<GraphPoint | null>(null);
     const [touchX, setTouchX] = useState<number | null>(null);
 
+    // State for data buffering to prevent animation flash
+    const [data, setData] = useState<GraphPoint[]>(incomingData);
+    const [prevData, setPrevData] = useState<GraphPoint[]>(incomingData);
+
     const progress = useSharedValue(0);
+    const transitionProgress = useSharedValue(1); // 1 = fully transitioned to new data
     const xScaleRef = useRef<d3Scale.ScaleLinear<number, number> | null>(null);
     const yScaleRef = useRef<d3Scale.ScaleLinear<number, number> | null>(null);
 
+    // Initial entry animation
     useEffect(() => {
         if (animate) {
             progress.value = 0;
@@ -92,15 +94,40 @@ export const LineGraph: React.FC<LineGraphProps> = ({
         } else {
             progress.value = 1;
         }
-    }, [animate, data]);
+    }, [animate]);
 
-    const { path, gradientPath, dataPoints, xLabels, yLabels } = useMemo(() => {
+    // Data change transition animation
+    useEffect(() => {
+        // Check if data actually changed
+        if (JSON.stringify(incomingData) !== JSON.stringify(data)) {
+            // Reset animation immediately
+            transitionProgress.value = 0;
+
+            // Update state for next render
+            setPrevData(data);
+            setData(incomingData);
+
+            // Start animation
+            transitionProgress.value = withTiming(1, {
+                duration: 750,
+                easing: Easing.inOut(Easing.ease),
+            });
+        }
+    }, [incomingData]);
+
+    const { path, gradientPath, prevPath, prevGradientPath, dotsPath, dotsBorderPath, prevDotsPath, prevDotsBorderPath, dataPoints, xLabels, yLabels } = useMemo(() => {
         if (data.length === 0) {
             xScaleRef.current = null;
             yScaleRef.current = null;
             return {
                 path: Skia.Path.Make(),
                 gradientPath: Skia.Path.Make(),
+                prevPath: Skia.Path.Make(),
+                prevGradientPath: Skia.Path.Make(),
+                dotsPath: Skia.Path.Make(),
+                dotsBorderPath: Skia.Path.Make(),
+                prevDotsPath: Skia.Path.Make(),
+                prevDotsBorderPath: Skia.Path.Make(),
                 dataPoints: [],
                 xLabels: [],
                 yLabels: [],
@@ -129,24 +156,71 @@ export const LineGraph: React.FC<LineGraphProps> = ({
             .curve(d3Shape.curveCatmullRom.alpha(tension));
 
         const d = lineGenerator(data);
-        const skPath = Skia.Path.MakeFromSVGString(d || '');
-
-        if (!skPath) {
-            return {
-                path: Skia.Path.Make(),
-                gradientPath: Skia.Path.Make(),
-                dataPoints: [],
-                xLabels: [],
-                yLabels: [],
-            };
-        }
+        const skPath = Skia.Path.MakeFromSVGString(d || '') || Skia.Path.Make();
 
         const gradPath = skPath.copy();
         gradPath.lineTo(width - padding, height - bottomPadding);
         gradPath.lineTo(leftPadding, height - bottomPadding);
         gradPath.close();
 
-        // Calculate positions for data points
+        // Generate dots paths
+        const dotsPath = Skia.Path.Make();
+        const dotsBorderPath = Skia.Path.Make();
+        data.forEach(d => {
+            dotsPath.addCircle(xScale(d.x), yScale(d.y), pointRadius);
+            if (pointBorderWidth > 0) {
+                dotsBorderPath.addCircle(xScale(d.x), yScale(d.y), pointRadius + pointBorderWidth);
+            }
+        });
+
+        // Previous Data Path (for morphing)
+        let prevSkPath = skPath;
+        let prevGradPath = gradPath;
+        let prevDotsPath = dotsPath;
+        let prevDotsBorderPath = dotsBorderPath;
+
+        if (prevData.length > 0 && JSON.stringify(prevData) !== JSON.stringify(data)) {
+            const prevMinX = d3Array.min(prevData, (d) => d.x) || 0;
+            const prevMaxX = d3Array.max(prevData, (d) => d.x) || 0;
+            const prevMinY = d3Array.min(prevData, (d) => d.y) || 0;
+            const prevMaxY = d3Array.max(prevData, (d) => d.y) || 0;
+
+            const prevXScale = d3Scale.scaleLinear()
+                .domain([prevMinX, prevMaxX])
+                .range([leftPadding, width - padding]);
+            const prevYScale = d3Scale.scaleLinear()
+                .domain([prevMinY, prevMaxY])
+                .range([height - bottomPadding, padding]);
+
+            const prevLineGenerator = d3Shape.line<{ x: number; y: number }>()
+                .x((d) => prevXScale(d.x))
+                .y((d) => prevYScale(d.y))
+                .curve(d3Shape.curveCatmullRom.alpha(tension));
+
+            const prevD = prevLineGenerator(prevData);
+            const pPath = Skia.Path.MakeFromSVGString(prevD || '');
+            if (pPath) {
+                prevSkPath = pPath;
+                prevGradPath = pPath.copy();
+                prevGradPath.lineTo(width - padding, height - bottomPadding);
+                prevGradPath.lineTo(leftPadding, height - bottomPadding);
+                prevGradPath.close();
+            }
+
+            // Generate prev dots paths
+            const pDotsPath = Skia.Path.Make();
+            const pDotsBorderPath = Skia.Path.Make();
+            prevData.forEach(d => {
+                pDotsPath.addCircle(prevXScale(d.x), prevYScale(d.y), pointRadius);
+                if (pointBorderWidth > 0) {
+                    pDotsBorderPath.addCircle(prevXScale(d.x), prevYScale(d.y), pointRadius + pointBorderWidth);
+                }
+            });
+            prevDotsPath = pDotsPath;
+            prevDotsBorderPath = pDotsBorderPath;
+        }
+
+        // Calculate positions for data points (for scrubbing)
         const points = data.map(d => ({
             x: xScale(d.x),
             y: yScale(d.y),
@@ -178,11 +252,41 @@ export const LineGraph: React.FC<LineGraphProps> = ({
         return {
             path: skPath,
             gradientPath: gradPath,
+            prevPath: prevSkPath,
+            prevGradientPath: prevGradPath,
+            dotsPath,
+            dotsBorderPath,
+            prevDotsPath,
+            prevDotsBorderPath,
             dataPoints: points,
             xLabels: xLabelPositions,
             yLabels: yLabelPositions,
         };
-    }, [data, width, height, tension, leftPadding, bottomPadding, padding, xAxisLabelCount, yAxisLabelCount, xAxisFormatter, yAxisFormatter]);
+    }, [data, prevData, width, height, tension, leftPadding, bottomPadding, padding, xAxisLabelCount, yAxisLabelCount, xAxisFormatter, yAxisFormatter, pointRadius, pointBorderWidth]);
+
+    const animatedPath = useDerivedValue(() => {
+        const t = transitionProgress.value;
+        if (t === 1) return path;
+        return prevPath.interpolate(path, t) || path;
+    });
+
+    const animatedGradientPath = useDerivedValue(() => {
+        const t = transitionProgress.value;
+        if (t === 1) return gradientPath;
+        return prevGradientPath.interpolate(gradientPath, t) || gradientPath;
+    });
+
+    const animatedDotsPath = useDerivedValue(() => {
+        const t = transitionProgress.value;
+        if (t === 1) return dotsPath;
+        return prevDotsPath.interpolate(dotsPath, t) || dotsPath;
+    });
+
+    const animatedDotsBorderPath = useDerivedValue(() => {
+        const t = transitionProgress.value;
+        if (t === 1) return dotsBorderPath;
+        return prevDotsBorderPath.interpolate(dotsBorderPath, t) || dotsBorderPath;
+    });
 
     // Find closest point to touch position
     const findClosestPoint = useCallback((x: number): GraphPoint | null => {
@@ -340,7 +444,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
                 {/* Gradient Fill */}
                 {gradient && (
                     <Group>
-                        <Path path={gradientPath} opacity={fillOpacity}>
+                        <Path path={animatedGradientPath} opacity={fillOpacity}>
                             <LinearGradient
                                 start={vec(0, 0)}
                                 end={vec(0, height)}
@@ -352,7 +456,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
 
                 {/* The Line */}
                 <Path
-                    path={path}
+                    path={animatedPath}
                     color={color}
                     style="stroke"
                     strokeWidth={strokeWidth}
@@ -363,24 +467,22 @@ export const LineGraph: React.FC<LineGraphProps> = ({
                 />
 
                 {/* Data Point Markers */}
-                {showPoints && dataPoints.map((point, i) => (
-                    <Group key={i}>
+                {showPoints && (
+                    <Group>
                         {pointBorderWidth > 0 && (
-                            <Circle
-                                cx={point.x}
-                                cy={point.y}
-                                r={pointRadius + pointBorderWidth}
+                            <Path
+                                path={animatedDotsBorderPath}
                                 color={pointBorderColor}
+                                style="fill"
                             />
                         )}
-                        <Circle
-                            cx={point.x}
-                            cy={point.y}
-                            r={pointRadius}
+                        <Path
+                            path={animatedDotsPath}
                             color={pointColor || color}
+                            style="fill"
                         />
                     </Group>
-                ))}
+                )}
 
                 {/* Vertical line at touch position */}
                 {touchX !== null && (

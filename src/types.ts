@@ -71,6 +71,37 @@ export interface BarChartProps {
     colors?: string[];
     animate?: boolean;
     showValues?: boolean;
+
+    // Axis configuration
+    showXAxis?: boolean;
+    showYAxis?: boolean;
+    showXAxisLabels?: boolean;
+    showYAxisLabels?: boolean;
+    axisColor?: string;
+    axisLabelColor?: string;
+    yAxisLabelCount?: number;
+
+    // Titles
+    title?: string;
+    titleColor?: string;
+    titleSize?: number;
+    xAxisTitle?: string;
+    yAxisTitle?: string;
+    axisTitleColor?: string;
+    axisTitleSize?: number;
+
+    // Formatting
+    xAxisFormatter?: (value: string) => string;
+    yAxisFormatter?: (value: number) => string;
+
+    // Tooltip
+    showTooltip?: boolean;
+    tooltipBackgroundColor?: string;
+    tooltipTextColor?: string;
+    tooltipFormatter?: (point: GraphPoint) => string;
+
+    // Grid
+    showGrid?: boolean;
 }
 
 export interface PieChartData {

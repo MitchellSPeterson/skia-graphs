@@ -1,37 +1,102 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { LineGraph, GraphPoint } from '../src';
 
-const lineData = Array.from({ length: 20 }, (_, i) => ({
-    x: i,
-    y: Math.sin(i * 0.5) * 50 + 50 + Math.random() * 20,
-}));
+// Generate different datasets
+const generateData = (seed: number): GraphPoint[] => {
+    return Array.from({ length: 20 }, (_, i) => ({
+        x: i,
+        y: Math.sin(i * 0.5 + seed) * 50 + 50 + Math.random() * 20,
+    }));
+};
 
-const lineData2 = Array.from({ length: 15 }, (_, i) => ({
-    x: i,
-    y: Math.cos(i * 0.4) * 40 + 60 + Math.random() * 15,
-}));
+const datasets = [
+    generateData(0),
+    generateData(1),
+    generateData(2),
+    generateData(3),
+];
 
 export default function LineGraphScreen() {
     const [selectedPoint, setSelectedPoint] = useState<GraphPoint | null>(null);
+    const [datasetIndex, setDatasetIndex] = useState(0);
+    const [currentData, setCurrentData] = useState(datasets[0]);
+    const [isAutoCycling, setIsAutoCycling] = useState(true);
+
+    // Auto-cycle through datasets
+    useEffect(() => {
+        if (!isAutoCycling) return;
+        const interval = setInterval(() => {
+            setDatasetIndex(prev => (prev + 1) % datasets.length);
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [isAutoCycling]);
+
+    useEffect(() => {
+        setCurrentData(datasets[datasetIndex]);
+    }, [datasetIndex]);
+
+    const handleDatasetSelect = (index: number) => {
+        setIsAutoCycling(false);
+        setDatasetIndex(index);
+    };
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-            <Text style={styles.title}>Line Graph</Text>
-            <Text style={styles.description}>
-                Highly customizable line graphs with Chart.js-like features
-            </Text>
-
-            {/* Full Featured Graph */}
+            {/* ... (unchanged) ... */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Full Featured</Text>
+                <Text style={styles.sectionTitle}>Animated Data Transitions</Text>
                 <Text style={styles.sectionDescription}>
-                    With title, axis labels, grid, points, and tooltip
+                    Watch the graph smoothly transition as data changes {isAutoCycling ? '(auto-cycling)' : '(manual)'}
                 </Text>
 
                 <View style={styles.chartContainer}>
                     <LineGraph
-                        data={lineData}
+                        data={currentData}
+                        width={350}
+                        height={250}
+                        title="Auto-Updating Data"
+                        xAxisTitle="Time"
+                        yAxisTitle="Value"
+                        gradient
+                        showPoints
+                        pointRadius={3}
+                        xAxisFormatter={(v) => `${v.toFixed(0)}s`}
+                        yAxisFormatter={(v) => `${v.toFixed(0)}`}
+                    />
+                </View>
+
+                <View style={styles.buttonRow}>
+                    {datasets.map((_, i) => (
+                        <TouchableOpacity
+                            key={i}
+                            style={[
+                                styles.datasetButton,
+                                datasetIndex === i && styles.datasetButtonActive,
+                            ]}
+                            onPress={() => handleDatasetSelect(i)}
+                        >
+                            <Text style={[
+                                styles.datasetButtonText,
+                                datasetIndex === i && styles.datasetButtonTextActive,
+                            ]}>
+                                Dataset {i + 1}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </View>
+
+            {/* Full Featured Graph */}
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Interactive Scrubbing</Text>
+                <Text style={styles.sectionDescription}>
+                    Touch and drag to explore data points
+                </Text>
+
+                <View style={styles.chartContainer}>
+                    <LineGraph
+                        data={datasets[0]}
                         width={350}
                         height={250}
                         title="Sales Performance"
@@ -65,7 +130,7 @@ export default function LineGraphScreen() {
 
                 <View style={styles.chartContainer}>
                     <LineGraph
-                        data={lineData2}
+                        data={datasets[1]}
                         width={350}
                         height={200}
                         color="#FF6B6B"
@@ -86,7 +151,7 @@ export default function LineGraphScreen() {
 
                 <View style={styles.chartContainer}>
                     <LineGraph
-                        data={lineData}
+                        data={datasets[2]}
                         width={350}
                         height={220}
                         color="#96CEB4"
@@ -108,49 +173,21 @@ export default function LineGraphScreen() {
                 </View>
             </View>
 
-            {/* Without Labels */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Axes Without Labels</Text>
-                <Text style={styles.sectionDescription}>
-                    Show axes but hide the numeric labels
-                </Text>
-
-                <View style={styles.chartContainer}>
-                    <LineGraph
-                        data={lineData2}
-                        width={350}
-                        height={200}
-                        color="#45B7D1"
-                        gradient
-                        showXAxisLabels={false}
-                        showYAxisLabels={false}
-                    />
-                </View>
-            </View>
-
             <Text style={styles.subtitle}>Features:</Text>
             <Text style={styles.feature}>• Smooth bezier curves with adjustable tension</Text>
+            <Text style={styles.feature}>• Animated data transitions (Chart.js-like)</Text>
             <Text style={styles.feature}>• Customizable titles and axis labels</Text>
             <Text style={styles.feature}>• Interactive tooltips on scrubbing</Text>
             <Text style={styles.feature}>• Data point markers with borders</Text>
             <Text style={styles.feature}>• Custom formatters for axes</Text>
             <Text style={styles.feature}>• Grid lines and fill opacity control</Text>
-            <Text style={styles.feature}>• Gradient fill below line</Text>
 
             <View style={styles.note}>
-                <Text style={styles.noteTitle}>💡 Chart.js-like Configuration</Text>
+                <Text style={styles.noteTitle}>💡 Data Transitions</Text>
                 <Text style={styles.noteText}>
-                    This component supports extensive customization similar to Chart.js:
+                    When data changes, the graph smoothly animates to the new values - just like Chart.js!
                     {'\n\n'}
-                    • <Text style={styles.code}>title</Text>, <Text style={styles.code}>xAxisTitle</Text>, <Text style={styles.code}>yAxisTitle</Text> for labels
-                    {'\n'}
-                    • <Text style={styles.code}>xAxisFormatter</Text>, <Text style={styles.code}>yAxisFormatter</Text> for custom formatting
-                    {'\n'}
-                    • <Text style={styles.code}>showPoints</Text>, <Text style={styles.code}>pointRadius</Text> for data markers
-                    {'\n'}
-                    • <Text style={styles.code}>fillOpacity</Text>, <Text style={styles.code}>tension</Text> for appearance
-                    {'\n'}
-                    • <Text style={styles.code}>showTooltip</Text>, <Text style={styles.code}>tooltipFormatter</Text> for interactivity
+                    Try clicking the dataset buttons above to see the transition animation in action.
                 </Text>
             </View>
         </ScrollView>
@@ -197,6 +234,32 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginVertical: 10,
     },
+    buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 10,
+        marginTop: 15,
+    },
+    datasetButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
+        backgroundColor: '#2a2a2a',
+        borderWidth: 1,
+        borderColor: '#444',
+    },
+    datasetButtonActive: {
+        backgroundColor: '#00d2ff',
+        borderColor: '#00d2ff',
+    },
+    datasetButtonText: {
+        color: '#999',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    datasetButtonTextActive: {
+        color: '#000',
+    },
     selectedPointInfo: {
         backgroundColor: '#1a1a1a',
         padding: 15,
@@ -240,14 +303,5 @@ const styles = StyleSheet.create({
         color: '#ccc',
         fontSize: 14,
         lineHeight: 22,
-    },
-    code: {
-        fontFamily: 'monospace',
-        backgroundColor: '#2a2a2a',
-        paddingHorizontal: 4,
-        paddingVertical: 2,
-        borderRadius: 3,
-        color: '#00d2ff',
-        fontSize: 12,
     },
 });
