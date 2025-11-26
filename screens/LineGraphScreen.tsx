@@ -19,41 +19,48 @@ export default function LineGraphScreen() {
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
             <Text style={styles.title}>Line Graph</Text>
             <Text style={styles.description}>
-                Smooth Catmull-Rom curves with gradient fill and animated path drawing.
+                Highly customizable line graphs with Chart.js-like features
             </Text>
 
-            {/* Interactive Graph with Scrubbing */}
+            {/* Full Featured Graph */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Interactive (Scrubbing Enabled)</Text>
+                <Text style={styles.sectionTitle}>Full Featured</Text>
                 <Text style={styles.sectionDescription}>
-                    Touch and drag to scrub through data points
+                    With title, axis labels, grid, points, and tooltip
                 </Text>
 
                 <View style={styles.chartContainer}>
                     <LineGraph
                         data={lineData}
                         width={350}
-                        height={200}
+                        height={250}
+                        title="Sales Performance"
+                        xAxisTitle="Month"
+                        yAxisTitle="Revenue ($)"
                         gradient
+                        showPoints
+                        pointRadius={3}
                         enableScrubbing
                         onPointSelected={setSelectedPoint}
+                        xAxisFormatter={(v) => `M${v.toFixed(0)}`}
+                        yAxisFormatter={(v) => `$${v.toFixed(0)}`}
                     />
                 </View>
 
                 {selectedPoint && (
                     <View style={styles.selectedPointInfo}>
                         <Text style={styles.selectedPointText}>
-                            📍 Selected: X = {selectedPoint.x.toFixed(1)}, Y = {selectedPoint.y.toFixed(1)}
+                            📍 Month {selectedPoint.x.toFixed(0)}: ${selectedPoint.y.toFixed(2)}
                         </Text>
                     </View>
                 )}
             </View>
 
-            {/* Static Graph without Scrubbing */}
+            {/* Minimal Graph */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Static (Default)</Text>
+                <Text style={styles.sectionTitle}>Minimal Style</Text>
                 <Text style={styles.sectionDescription}>
-                    Standard display without touch interaction
+                    Clean display without axes or grid
                 </Text>
 
                 <View style={styles.chartContainer}>
@@ -63,23 +70,87 @@ export default function LineGraphScreen() {
                         height={200}
                         color="#FF6B6B"
                         gradient
+                        showXAxis={false}
+                        showYAxis={false}
+                        showGrid={false}
+                    />
+                </View>
+            </View>
+
+            {/* Custom Styled Graph */}
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Custom Styling</Text>
+                <Text style={styles.sectionDescription}>
+                    Custom colors, formatters, and point markers
+                </Text>
+
+                <View style={styles.chartContainer}>
+                    <LineGraph
+                        data={lineData}
+                        width={350}
+                        height={220}
+                        color="#96CEB4"
+                        title="Temperature Trend"
+                        titleColor="#96CEB4"
+                        xAxisTitle="Hour"
+                        yAxisTitle="°F"
+                        axisTitleColor="#96CEB4"
+                        axisColor="rgba(150, 206, 180, 0.3)"
+                        axisLabelColor="rgba(150, 206, 180, 0.8)"
+                        gradient
+                        fillOpacity={0.3}
+                        showPoints
+                        pointRadius={4}
+                        pointBorderWidth={2}
+                        xAxisFormatter={(v) => `${v.toFixed(0)}h`}
+                        yAxisFormatter={(v) => `${v.toFixed(0)}°`}
+                    />
+                </View>
+            </View>
+
+            {/* Without Labels */}
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Axes Without Labels</Text>
+                <Text style={styles.sectionDescription}>
+                    Show axes but hide the numeric labels
+                </Text>
+
+                <View style={styles.chartContainer}>
+                    <LineGraph
+                        data={lineData2}
+                        width={350}
+                        height={200}
+                        color="#45B7D1"
+                        gradient
+                        showXAxisLabels={false}
+                        showYAxisLabels={false}
                     />
                 </View>
             </View>
 
             <Text style={styles.subtitle}>Features:</Text>
-            <Text style={styles.feature}>• Smooth bezier curves</Text>
-            <Text style={styles.feature}>• Gradient fill</Text>
-            <Text style={styles.feature}>• Animated drawing</Text>
-            <Text style={styles.feature}>• Optional interactive scrubbing</Text>
-            <Text style={styles.feature}>• Customizable colors</Text>
+            <Text style={styles.feature}>• Smooth bezier curves with adjustable tension</Text>
+            <Text style={styles.feature}>• Customizable titles and axis labels</Text>
+            <Text style={styles.feature}>• Interactive tooltips on scrubbing</Text>
+            <Text style={styles.feature}>• Data point markers with borders</Text>
+            <Text style={styles.feature}>• Custom formatters for axes</Text>
+            <Text style={styles.feature}>• Grid lines and fill opacity control</Text>
+            <Text style={styles.feature}>• Gradient fill below line</Text>
 
             <View style={styles.note}>
-                <Text style={styles.noteTitle}>💡 Scrubbing Feature</Text>
+                <Text style={styles.noteTitle}>💡 Chart.js-like Configuration</Text>
                 <Text style={styles.noteText}>
-                    Set <Text style={styles.code}>enableScrubbing={'{true}'}</Text> to enable touch interaction.
+                    This component supports extensive customization similar to Chart.js:
                     {'\n\n'}
-                    Provide an <Text style={styles.code}>onPointSelected</Text> callback to receive selected point data.
+                    • <Text style={styles.code}>title</Text>, <Text style={styles.code}>xAxisTitle</Text>, <Text style={styles.code}>yAxisTitle</Text> for labels
+                    {'\n'}
+                    • <Text style={styles.code}>xAxisFormatter</Text>, <Text style={styles.code}>yAxisFormatter</Text> for custom formatting
+                    {'\n'}
+                    • <Text style={styles.code}>showPoints</Text>, <Text style={styles.code}>pointRadius</Text> for data markers
+                    {'\n'}
+                    • <Text style={styles.code}>fillOpacity</Text>, <Text style={styles.code}>tension</Text> for appearance
+                    {'\n'}
+                    • <Text style={styles.code}>showTooltip</Text>, <Text style={styles.code}>tooltipFormatter</Text> for interactivity
                 </Text>
             </View>
         </ScrollView>
@@ -173,9 +244,10 @@ const styles = StyleSheet.create({
     code: {
         fontFamily: 'monospace',
         backgroundColor: '#2a2a2a',
-        paddingHorizontal: 6,
+        paddingHorizontal: 4,
         paddingVertical: 2,
-        borderRadius: 4,
+        borderRadius: 3,
         color: '#00d2ff',
+        fontSize: 12,
     },
 });

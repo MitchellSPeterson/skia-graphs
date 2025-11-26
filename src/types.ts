@@ -17,6 +17,48 @@ export interface LineGraphProps {
     enablePanZoom?: boolean;
     enableScrubbing?: boolean;
     onPointSelected?: (point: GraphPoint | null) => void;
+
+    // Axis configuration
+    showXAxis?: boolean;
+    showYAxis?: boolean;
+    showXAxisLabels?: boolean;
+    showYAxisLabels?: boolean;
+    axisColor?: string;
+    axisLabelColor?: string;
+    xAxisLabelCount?: number;
+    yAxisLabelCount?: number;
+
+    // Titles
+    title?: string;
+    titleColor?: string;
+    titleSize?: number;
+    xAxisTitle?: string;
+    yAxisTitle?: string;
+    axisTitleColor?: string;
+    axisTitleSize?: number;
+
+    // Formatting
+    xAxisFormatter?: (value: number) => string;
+    yAxisFormatter?: (value: number) => string;
+
+    // Tooltip (when scrubbing)
+    showTooltip?: boolean;
+    tooltipBackgroundColor?: string;
+    tooltipTextColor?: string;
+    tooltipFormatter?: (point: GraphPoint) => string;
+
+    // Data point markers
+    showPoints?: boolean;
+    pointRadius?: number;
+    pointColor?: string;
+    pointBorderColor?: string;
+    pointBorderWidth?: number;
+
+    // Fill options
+    fillOpacity?: number;
+
+    // Curve tension (0 = linear, 1 = very curved)
+    tension?: number;
 }
 
 export interface BarChartProps {
