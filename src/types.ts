@@ -15,6 +15,8 @@ export interface LineGraphProps {
     animate?: boolean;
     gradient?: boolean;
     enablePanZoom?: boolean;
+    enableScrubbing?: boolean;
+    onPointSelected?: (point: GraphPoint | null) => void;
 }
 
 export interface BarChartProps {
