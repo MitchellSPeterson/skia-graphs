@@ -111,7 +111,7 @@ export const BarChart: React.FC<BarChartProps> = ({
     useEffect(() => {
         if (animate) {
             progress.value = 0;
-            progress.value = withSpring(1, { damping: 12, stiffness: 90 });
+            progress.value = withSpring(1, { damping: 24, stiffness: 100 });
         } else {
             progress.value = 1;
         }
