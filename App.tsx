@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ScrollView, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, ScrollView } from 'react-native';
 import { LineGraph, BarChart, PieChart, ScatterPlot } from './src';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -8,7 +8,6 @@ const lineData = Array.from({ length: 20 }, (_, i) => ({
   y: Math.sin(i * 0.5) * 50 + 50 + Math.random() * 20,
 }));
 
-console.log('Line Data:', lineData);
 
 const barData = Array.from({ length: 7 }, (_, i) => ({
   x: i,
