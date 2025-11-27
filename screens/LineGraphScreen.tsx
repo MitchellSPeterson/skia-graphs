@@ -106,19 +106,92 @@ export default function LineGraphScreen() {
                         showPoints
                         pointRadius={3}
                         enableScrubbing
+                        enableIndicator={true}
+                        indicatorPulsating={false}
+                        enableHaptics={true}
                         onPointSelected={setSelectedPoint}
                         xAxisFormatter={(v) => `M${v.toFixed(0)}`}
                         yAxisFormatter={(v) => `$${v.toFixed(0)}`}
                     />
                 </View>
 
-                {selectedPoint && (
-                    <View style={styles.selectedPointInfo}>
-                        <Text style={styles.selectedPointText}>
-                            📍 Month {selectedPoint.x.toFixed(0)}: ${selectedPoint.y.toFixed(2)}
-                        </Text>
-                    </View>
-                )}
+                <View style={styles.selectedPointInfo}>
+                    <Text style={styles.selectedPointText}>
+                        📍 Month {selectedPoint?.x.toFixed(0)}: ${selectedPoint?.y.toFixed(2)}
+                    </Text>
+                </View>
+
+                <Text style={styles.sectionDescription}>
+                    (Try scrubbing! Haptics and pulsating indicator enabled)
+                </Text>
+
+                <View style={styles.chartContainer}>
+                    <LineGraph
+                        data={datasets[0]}
+                        width={350}
+                        height={250}
+                        showXAxis={false}
+                        showYAxis={false}
+                        showTitle={false}
+                        showGrid={false}
+                        showXAxisLabels={false}
+                        showYAxisLabels={false}
+                        showTooltip={false}
+                        gradient
+                        showPoints={false}
+                        pointRadius={3}
+                        enableScrubbing
+                        enableIndicator={false}
+                        indicatorPulsating={true}
+                        enableHaptics={true}
+                        onPointSelected={setSelectedPoint}
+                        xAxisFormatter={(v) => `M${v.toFixed(0)}`}
+                        yAxisFormatter={(v) => `$${v.toFixed(0)}`}
+                    />
+                </View>
+
+                <View style={styles.selectedPointInfo}>
+                    <Text style={styles.selectedPointText}>
+                        📍 Month {selectedPoint?.x.toFixed(0)}: ${selectedPoint?.y.toFixed(2)}
+                    </Text>
+                </View>
+
+
+            </View>
+
+            {/* Toggle Visibility Graph */}
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Visibility Toggles</Text>
+                <Text style={styles.sectionDescription}>
+                    Graph with hidden axis and title
+                </Text>
+
+                <View style={styles.chartContainer}>
+                    <LineGraph
+                        data={datasets[0]}
+                        width={350}
+                        height={200}
+                        title="Hidden Title"
+                        xAxisTitle="Hidden X"
+                        yAxisTitle="Hidden Y"
+                        showTitle={false}
+                        showAxis={false}
+                        gradient
+                        color="#FF6B6B"
+                    />
+                </View>
+                <View style={styles.chartContainer}>
+                    <LineGraph
+                        data={datasets[1]}
+                        width={350}
+                        height={200}
+                        color="#FF6B6B"
+                        gradient
+                        showXAxis={false}
+                        showYAxis={false}
+                        showGrid={false}
+                    />
+                </View>
             </View>
 
             {/* Minimal Graph */}
@@ -162,7 +235,6 @@ export default function LineGraphScreen() {
                         axisTitleColor="#96CEB4"
                         axisColor="rgba(150, 206, 180, 0.3)"
                         axisLabelColor="rgba(150, 206, 180, 0.8)"
-                        gradient
                         fillOpacity={0.3}
                         showPoints
                         pointRadius={4}
@@ -190,7 +262,7 @@ export default function LineGraphScreen() {
                     Try clicking the dataset buttons above to see the transition animation in action.
                 </Text>
             </View>
-        </ScrollView>
+        </ScrollView >
     );
 }
 

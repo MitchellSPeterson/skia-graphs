@@ -59,6 +59,17 @@ export interface LineGraphProps {
 
     // Curve tension (0 = linear, 1 = very curved)
     tension?: number;
+
+    // Visibility toggles
+    showAxis?: boolean;
+    showTitle?: boolean;
+
+    // Scrubbing configuration
+    enableIndicator?: boolean;
+    indicatorPulsating?: boolean;
+
+    // Haptics
+    enableHaptics?: boolean;
 }
 
 export interface BarChartProps {

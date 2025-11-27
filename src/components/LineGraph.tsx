@@ -9,12 +9,14 @@ import {
     Group,
     Circle,
     RoundedRect,
+    SkContourMeasure,
 } from '@shopify/react-native-skia';
 import * as d3Scale from 'd3-scale';
 import * as d3Shape from 'd3-shape';
 import * as d3Array from 'd3-array';
 import { LineGraphProps, GraphPoint } from '../types';
-import { useSharedValue, withTiming, Easing, useDerivedValue, runOnJS } from 'react-native-reanimated';
+import { useSharedValue, withTiming, Easing, useDerivedValue, runOnJS, withRepeat, withSequence } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DEFAULT_WIDTH = SCREEN_WIDTH - 32;
@@ -30,9 +32,13 @@ export const LineGraph: React.FC<LineGraphProps> = ({
     animate = true,
     gradient = true,
     enableScrubbing = false,
+    enableIndicator = true,
+    indicatorPulsating = false,
+    enableHaptics = false,
     onPointSelected,
 
     // Axis configuration
+    showAxis = true,
     showXAxis = true,
     showYAxis = true,
     showXAxisLabels = true,
@@ -43,6 +49,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
     yAxisLabelCount = 5,
 
     // Titles
+    showTitle = true,
     title,
     titleColor = '#fff',
     titleSize = 16,
@@ -70,9 +77,10 @@ export const LineGraph: React.FC<LineGraphProps> = ({
     tooltipBackgroundColor = 'rgba(0, 0, 0, 0.8)',
     tooltipTextColor = '#fff',
 }) => {
+    const topPadding = (showTitle && title) ? 60 : ((showAxis && yAxisTitle) ? 40 : 20);
     const padding = 20;
-    const bottomPadding = xAxisTitle ? 50 : 30;
-    const leftPadding = yAxisTitle ? 50 : 30;
+    const bottomPadding = (showAxis && xAxisTitle) ? 50 : 30;
+    const leftPadding = (showAxis && yAxisTitle) ? 60 : 30;
 
     const [selectedPoint, setSelectedPoint] = useState<GraphPoint | null>(null);
     const [touchX, setTouchX] = useState<number | null>(null);
@@ -83,8 +91,10 @@ export const LineGraph: React.FC<LineGraphProps> = ({
 
     const progress = useSharedValue(0);
     const transitionProgress = useSharedValue(1); // 1 = fully transitioned to new data
+    const pulse = useSharedValue(1);
     const xScaleRef = useRef<d3Scale.ScaleLinear<number, number> | null>(null);
     const yScaleRef = useRef<d3Scale.ScaleLinear<number, number> | null>(null);
+    const pathMeasureRef = useRef<SkContourMeasure | null>(null);
 
     // Initial entry animation
     useEffect(() => {
@@ -115,6 +125,22 @@ export const LineGraph: React.FC<LineGraphProps> = ({
         }
     }, [incomingData]);
 
+    // Pulsating animation for indicator
+    useEffect(() => {
+        if (indicatorPulsating && selectedPoint) {
+            pulse.value = withRepeat(
+                withSequence(
+                    withTiming(1.5, { duration: 1000 }),
+                    withTiming(1, { duration: 1000 })
+                ),
+                -1,
+                true
+            );
+        } else {
+            pulse.value = 1;
+        }
+    }, [indicatorPulsating, selectedPoint]);
+
     const { path, gradientPath, prevPath, prevGradientPath, dotsPath, dotsBorderPath, prevDotsPath, prevDotsBorderPath, dataPoints, xLabels, yLabels } = useMemo(() => {
         if (data.length === 0) {
             xScaleRef.current = null;
@@ -144,7 +170,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
             .range([leftPadding, width - padding]);
         const yScale = d3Scale.scaleLinear()
             .domain([minY, maxY])
-            .range([height - bottomPadding, padding]);
+            .range([height - bottomPadding, topPadding]);
 
         // Store scales in refs for touch handling
         xScaleRef.current = xScale;
@@ -262,7 +288,16 @@ export const LineGraph: React.FC<LineGraphProps> = ({
             xLabels: xLabelPositions,
             yLabels: yLabelPositions,
         };
-    }, [data, prevData, width, height, tension, leftPadding, bottomPadding, padding, xAxisLabelCount, yAxisLabelCount, xAxisFormatter, yAxisFormatter, pointRadius, pointBorderWidth]);
+    }, [data, prevData, width, height, tension, leftPadding, bottomPadding, topPadding, padding, xAxisLabelCount, yAxisLabelCount, xAxisFormatter, yAxisFormatter, pointRadius, pointBorderWidth]);
+
+    // Update PathMeasure when path changes
+    useEffect(() => {
+        if (path) {
+            const iter = Skia.ContourMeasureIter(path, false, 1);
+            const measure = iter.next();
+            pathMeasureRef.current = measure;
+        }
+    }, [path]);
 
     const animatedPath = useDerivedValue(() => {
         const t = transitionProgress.value;
@@ -288,26 +323,60 @@ export const LineGraph: React.FC<LineGraphProps> = ({
         return prevDotsBorderPath.interpolate(dotsBorderPath, t) || dotsBorderPath;
     });
 
-    // Find closest point to touch position
-    const findClosestPoint = useCallback((x: number): GraphPoint | null => {
+    // Find point on line for a given X
+    const getPointAtX = useCallback((x: number): GraphPoint | null => {
         const xScale = xScaleRef.current;
-        if (!xScale || data.length === 0) return null;
+        const yScale = yScaleRef.current;
+        const measure = pathMeasureRef.current;
 
-        const xValue = xScale.invert(x);
+        if (!xScale || !yScale || !measure || data.length === 0) return null;
 
-        let closestPoint = data[0];
-        let minDistance = Math.abs(closestPoint.x - xValue);
+        // Binary search for the point on the path with the closest X
+        let start = 0;
+        let end = measure.length();
+        let bestPoint = { x: 0, y: 0 };
+        let minDiff = Number.MAX_VALUE;
 
-        for (const point of data) {
-            const distance = Math.abs(point.x - xValue);
-            if (distance < minDistance) {
-                minDistance = distance;
-                closestPoint = point;
+        // Optimization: check if X is out of bounds
+        const startPos = measure.getPosTan(0)[0];
+        const endPos = measure.getPosTan(end)[0];
+
+        if (x <= startPos.x) {
+            bestPoint = startPos;
+        } else if (x >= endPos.x) {
+            bestPoint = endPos;
+        } else {
+            // Binary search (approximate)
+            for (let i = 0; i < 20; i++) {
+                const mid = (start + end) / 2;
+                const pos = measure.getPosTan(mid)[0];
+                const diff = pos.x - x;
+
+                if (Math.abs(diff) < minDiff) {
+                    minDiff = Math.abs(diff);
+                    bestPoint = pos;
+                }
+
+                if (diff < 0) {
+                    start = mid;
+                } else {
+                    end = mid;
+                }
             }
         }
 
-        return closestPoint;
+        // Map back to data values
+        const xValue = xScale.invert(bestPoint.x);
+        const yValue = yScale.invert(bestPoint.y);
+
+        return {
+            x: xValue,
+            y: yValue,
+            // Preserve other properties from closest data point if needed, or just return coordinates
+        };
     }, [data]);
+
+    const lastHapticIndex = useRef<number | null>(null);
 
     // PanResponder for touch handling
     const panResponder = useRef(
@@ -317,24 +386,59 @@ export const LineGraph: React.FC<LineGraphProps> = ({
             onPanResponderGrant: (evt) => {
                 const x = evt.nativeEvent.locationX;
                 setTouchX(x);
-                const point = findClosestPoint(x);
-                setSelectedPoint(point);
-                if (onPointSelected && point) {
-                    onPointSelected(point);
+                const point = getPointAtX(x);
+
+                if (point) {
+                    setSelectedPoint(point);
+                    if (onPointSelected) {
+                        onPointSelected(point);
+                    }
+
+                    // Reset haptics
+                    lastHapticIndex.current = null;
                 }
             },
             onPanResponderMove: (evt) => {
                 const x = evt.nativeEvent.locationX;
                 setTouchX(x);
-                const point = findClosestPoint(x);
-                setSelectedPoint(point);
-                if (onPointSelected && point) {
-                    onPointSelected(point);
+                const point = getPointAtX(x);
+
+                if (point) {
+                    setSelectedPoint(point);
+                    if (onPointSelected) {
+                        onPointSelected(point);
+                    }
+
+                    // Haptics: trigger when passing a data point
+                    if (enableHaptics) {
+                        // Find closest data point index
+                        // Assuming data is sorted by x
+                        // We can optimize this, but for now simple search
+                        let closestIndex = -1;
+                        let minDiff = Number.MAX_VALUE;
+
+                        for (let i = 0; i < data.length; i++) {
+                            const diff = Math.abs(data[i].x - point.x);
+                            if (diff < minDiff) {
+                                minDiff = diff;
+                                closestIndex = i;
+                            }
+                        }
+
+                        // If we moved to a new closest point, trigger haptic
+                        // We also check if we are "close enough" to the point to avoid triggering when far?
+                        // Actually, just changing closest index is good for "snapping" feel even if visual is continuous.
+                        if (closestIndex !== -1 && closestIndex !== lastHapticIndex.current) {
+                            Haptics.selectionAsync();
+                            lastHapticIndex.current = closestIndex;
+                        }
+                    }
                 }
             },
             onPanResponderRelease: () => {
                 setTouchX(null);
                 setSelectedPoint(null);
+                lastHapticIndex.current = null;
                 if (onPointSelected) {
                     onPointSelected(null);
                 }
@@ -342,6 +446,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
             onPanResponderTerminate: () => {
                 setTouchX(null);
                 setSelectedPoint(null);
+                lastHapticIndex.current = null;
                 if (onPointSelected) {
                     onPointSelected(null);
                 }
@@ -355,55 +460,33 @@ export const LineGraph: React.FC<LineGraphProps> = ({
         const yScale = yScaleRef.current;
         if (!selectedPoint || !xScale || !yScale) return null;
 
-        // Find the actual Y value by interpolating between surrounding points
-        const targetX = selectedPoint.x;
-        let interpolatedY = selectedPoint.y;
-
-        // Find surrounding points for better interpolation
-        const sortedData = [...data].sort((a, b) => a.x - b.x);
-        const index = sortedData.findIndex(d => d.x === targetX);
-
-        if (index > 0 && index < sortedData.length - 1) {
-            // Use the actual data point Y value for exact match
-            interpolatedY = sortedData[index].y;
-        } else if (index === -1) {
-            // Interpolate between two closest points
-            for (let i = 0; i < sortedData.length - 1; i++) {
-                if (sortedData[i].x <= targetX && sortedData[i + 1].x >= targetX) {
-                    const x1 = sortedData[i].x;
-                    const y1 = sortedData[i].y;
-                    const x2 = sortedData[i + 1].x;
-                    const y2 = sortedData[i + 1].y;
-                    const t = (targetX - x1) / (x2 - x1);
-                    interpolatedY = y1 + t * (y2 - y1);
-                    break;
-                }
-            }
-        }
-
         return {
-            x: xScale(targetX),
-            y: yScale(interpolatedY),
+            x: xScale(selectedPoint.x),
+            y: yScale(selectedPoint.y),
         };
-    }, [selectedPoint, data]);
+    }, [selectedPoint]);
+
+    const animatedPulseRadius = useDerivedValue(() => {
+        return 8 * pulse.value;
+    });
 
     return (
         <View style={[styles.container, { width, height }]}>
             {/* Title */}
-            {title && (
-                <Text style={[styles.title, { color: titleColor, fontSize: titleSize }]}>
+            {showTitle && title && (
+                <Text style={[styles.title, { color: titleColor, fontSize: titleSize, position: 'absolute', top: 5, left: 0, right: 0, textAlign: 'center' }]}>
                     {title}
                 </Text>
             )}
 
             <Canvas style={{ width, height }}>
                 {/* Grid Lines */}
-                {showGrid && (
+                {showAxis && showGrid && (
                     <Group>
                         {xLabels.map((label, i) => (
                             <Path
                                 key={`vgrid-${i}`}
-                                path={Skia.Path.Make().moveTo(label.x, padding).lineTo(label.x, height - bottomPadding)}
+                                path={Skia.Path.Make().moveTo(label.x, topPadding).lineTo(label.x, height - bottomPadding)}
                                 color="rgba(255, 255, 255, 0.05)"
                                 style="stroke"
                                 strokeWidth={1}
@@ -422,7 +505,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
                 )}
 
                 {/* X Axis */}
-                {showXAxis && (
+                {showAxis && showXAxis && (
                     <Path
                         path={Skia.Path.Make().moveTo(leftPadding, height - bottomPadding).lineTo(width - padding, height - bottomPadding)}
                         color={axisColor}
@@ -432,9 +515,9 @@ export const LineGraph: React.FC<LineGraphProps> = ({
                 )}
 
                 {/* Y Axis */}
-                {showYAxis && (
+                {showAxis && showYAxis && (
                     <Path
-                        path={Skia.Path.Make().moveTo(leftPadding, padding).lineTo(leftPadding, height - bottomPadding)}
+                        path={Skia.Path.Make().moveTo(leftPadding, topPadding).lineTo(leftPadding, height - bottomPadding)}
                         color={axisColor}
                         style="stroke"
                         strokeWidth={1}
@@ -485,7 +568,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
                 )}
 
                 {/* Vertical line at touch position */}
-                {touchX !== null && (
+                {enableIndicator && touchX !== null && (
                     <Path
                         path={Skia.Path.Make().moveTo(touchX, padding).lineTo(touchX, height - bottomPadding)}
                         color="rgba(255, 255, 255, 0.3)"
@@ -500,7 +583,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
                         <Circle
                             cx={selectedPointPosition.x}
                             cy={selectedPointPosition.y}
-                            r={8}
+                            r={animatedPulseRadius}
                             color={color}
                             opacity={0.3}
                         />
@@ -527,7 +610,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
             </Canvas>
 
             {/* X-Axis Labels */}
-            {showXAxisLabels && xLabels.map((label, i) => (
+            {showAxis && showXAxisLabels && xLabels.map((label, i) => (
                 <Text
                     key={i}
                     style={[
@@ -545,7 +628,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
             ))}
 
             {/* Y-Axis Labels */}
-            {showYAxisLabels && yLabels.map((label, i) => (
+            {showAxis && showYAxisLabels && yLabels.map((label, i) => (
                 <Text
                     key={i}
                     style={[
@@ -563,7 +646,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
             ))}
 
             {/* X-Axis Title */}
-            {xAxisTitle && (
+            {showAxis && xAxisTitle && (
                 <Text
                     style={[
                         styles.axisTitle,
@@ -581,14 +664,14 @@ export const LineGraph: React.FC<LineGraphProps> = ({
             )}
 
             {/* Y-Axis Title */}
-            {yAxisTitle && (
+            {showAxis && yAxisTitle && (
                 <Text
                     style={[
                         styles.axisTitle,
                         {
                             position: 'absolute',
-                            left: 5,
-                            top: 15,
+                            left: 2,
+                            top: title ? 35 : 5,
                             color: axisTitleColor,
                             fontSize: axisTitleSize,
                         },

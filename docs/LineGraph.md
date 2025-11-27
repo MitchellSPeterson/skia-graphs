@@ -100,7 +100,24 @@ const data = [
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `fillOpacity` | `number` | `0.2` | Opacity of gradient fill (0-1) |
+| `fillOpacity` | `number` | `0.2` | Opacity of gradient fill (0-1) |
 | `tension` | `number` | `0.5` | Curve tension (0 = linear, 1 = very curved) |
+
+### Visibility Configuration
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `showAxis` | `boolean` | `true` | Show/hide both axes and their labels |
+| `showTitle` | `boolean` | `true` | Show/hide the main chart title |
+
+### Scrubbing Configuration
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `enableScrubbing` | `boolean` | `false` | Enables interactive scrubbing. The indicator follows the line exactly (continuous scrubbing). |
+| `enableIndicator` | `boolean` | `true` | Shows a vertical line at the touch position during scrubbing. |
+| `indicatorPulsating` | `boolean` | `false` | Enables a pulsating animation for the selected point indicator. |
+| `enableHaptics` | `boolean` | `false` | Enables haptic feedback when scrubbing across data points. |
 
 ## Data Format
 
