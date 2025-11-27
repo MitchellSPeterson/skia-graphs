@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { LineGraph, GraphPoint } from '../src';
+import { View, StyleSheet, ScrollView, Text, Switch, TouchableOpacity } from 'react-native';
+import { LineGraph } from '../src/components/LineGraph';
+import { GraphPoint } from '../src/types';
+import * as Haptics from 'expo-haptics';
 
 // Generate different datasets
 const generateData = (seed: number): GraphPoint[] => {
@@ -109,6 +111,7 @@ export default function LineGraphScreen() {
                         enableIndicator={true}
                         indicatorPulsating={false}
                         enableHaptics={true}
+                        onHapticFeedback={() => Haptics.selectionAsync()}
                         onPointSelected={setSelectedPoint}
                         xAxisFormatter={(v) => `M${v.toFixed(0)}`}
                         yAxisFormatter={(v) => `$${v.toFixed(0)}`}
@@ -144,6 +147,7 @@ export default function LineGraphScreen() {
                         enableIndicator={false}
                         indicatorPulsating={true}
                         enableHaptics={true}
+                        onHapticFeedback={() => Haptics.selectionAsync()}
                         onPointSelected={setSelectedPoint}
                         xAxisFormatter={(v) => `M${v.toFixed(0)}`}
                         yAxisFormatter={(v) => `$${v.toFixed(0)}`}

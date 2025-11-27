@@ -16,7 +16,6 @@ import * as d3Shape from 'd3-shape';
 import * as d3Array from 'd3-array';
 import { LineGraphProps, GraphPoint } from '../types';
 import { useSharedValue, withTiming, Easing, useDerivedValue, runOnJS, withRepeat, withSequence } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DEFAULT_WIDTH = SCREEN_WIDTH - 32;
@@ -35,6 +34,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
     enableIndicator = true,
     indicatorPulsating = false,
     enableHaptics = false,
+    onHapticFeedback,
     onPointSelected,
 
     // Axis configuration
@@ -429,7 +429,9 @@ export const LineGraph: React.FC<LineGraphProps> = ({
                         // We also check if we are "close enough" to the point to avoid triggering when far?
                         // Actually, just changing closest index is good for "snapping" feel even if visual is continuous.
                         if (closestIndex !== -1 && closestIndex !== lastHapticIndex.current) {
-                            Haptics.selectionAsync();
+                            if (onHapticFeedback) {
+                                runOnJS(onHapticFeedback)();
+                            }
                             lastHapticIndex.current = closestIndex;
                         }
                     }

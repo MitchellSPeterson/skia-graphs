@@ -70,6 +70,7 @@ export interface LineGraphProps {
 
     // Haptics
     enableHaptics?: boolean;
+    onHapticFeedback?: () => void;
 }
 
 export interface BarChartProps {

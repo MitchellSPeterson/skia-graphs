@@ -117,7 +117,8 @@ const data = [
 | `enableScrubbing` | `boolean` | `false` | Enables interactive scrubbing. The indicator follows the line exactly (continuous scrubbing). |
 | `enableIndicator` | `boolean` | `true` | Shows a vertical line at the touch position during scrubbing. |
 | `indicatorPulsating` | `boolean` | `false` | Enables a pulsating animation for the selected point indicator. |
-| `enableHaptics` | `boolean` | `false` | Enables haptic feedback when scrubbing across data points. |
+| `enableHaptics` | `boolean` | `false` | Enables haptic feedback when scrubbing across data points. Requires `onHapticFeedback` to be set. |
+| `onHapticFeedback` | `() => void` | `undefined` | Callback function to trigger haptic feedback. Use with `expo-haptics` or similar libraries. |
 
 ## Data Format
 
