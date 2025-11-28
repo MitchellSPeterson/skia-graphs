@@ -82,6 +82,7 @@ export interface BarChartProps {
     roundedTop?: boolean;
     colors?: string[];
     animate?: boolean;
+    showGradient?: boolean;
     showValues?: boolean;
 
     // Axis configuration

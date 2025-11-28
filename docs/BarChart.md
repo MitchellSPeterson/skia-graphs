@@ -36,10 +36,17 @@ const data = [
 | `width` | `number` | `Screen Width - 32` | Width of the chart in pixels |
 | `height` | `number` | `200` | Height of the chart in pixels |
 | `barWidth` | `number` | `auto` | Width of each bar (auto-calculated if not provided) |
-| `spacing` | `number` | `10` | Spacing between bars in pixels |
+| `spacing` | `number` | `0.2` | Inner padding between bars (0-1) |
 | `roundedTop` | `boolean` | `true` | Whether bars have rounded tops |
-| `colors` | `string[]` | `['#00d2ff', '#3a7bd5']` | Default colors to cycle through if not specified per bar |
+| `showGradient` | `boolean` | `true` | Whether to show gradient fill on bars |
+| `colors` | `string[]` | `['#00d2ff', ...]` | Default colors to cycle through |
 | `animate` | `boolean` | `true` | Enable/disable entry animation |
+| `title` | `string` | `undefined` | Chart title |
+| `xAxisTitle` | `string` | `undefined` | X-axis title |
+| `yAxisTitle` | `string` | `undefined` | Y-axis title |
+| `showGrid` | `boolean` | `true` | Show background grid |
+| `showValues` | `boolean` | `false` | Show values on top of bars |
+| `showTooltip` | `boolean` | `true` | Enable interactive tooltips |
 
 ## Data Format
 
@@ -109,7 +116,7 @@ interface GraphPoint {
 ## Styling
 
 ### Bar Appearance
-- Bars are rendered with a gradient from the specified color to a semi-transparent white
+- Bars are rendered with a gradient from the specified color to a semi-transparent white (unless `showGradient` is false)
 - The `roundedTop` prop adds an 8px border radius to the top corners
 - Bar width is automatically calculated based on available space and number of bars
 

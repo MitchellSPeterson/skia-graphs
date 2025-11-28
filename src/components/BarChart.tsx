@@ -33,9 +33,10 @@ interface AnimatedBarProps {
     progress: SharedValue<number>;
     roundedTop: boolean;
     bottomY: number;
+    showGradient: boolean;
 }
 
-const AnimatedBar: React.FC<AnimatedBarProps> = ({ bar, progress, roundedTop, bottomY }) => {
+const AnimatedBar: React.FC<AnimatedBarProps> = ({ bar, progress, roundedTop, bottomY, showGradient }) => {
     const y = useDerivedValue(() => bottomY - bar.h * progress.value);
     const height = useDerivedValue(() => bar.h * progress.value);
 
@@ -48,11 +49,13 @@ const AnimatedBar: React.FC<AnimatedBarProps> = ({ bar, progress, roundedTop, bo
             r={roundedTop ? 8 : 0}
             color={bar.color}
         >
-            <LinearGradient
-                start={vec(bar.x, bar.y)}
-                end={vec(bar.x, bar.y + bar.h)}
-                colors={[bar.color, '#ffffff50']}
-            />
+            {showGradient && (
+                <LinearGradient
+                    start={vec(bar.x, bar.y)}
+                    end={vec(bar.x, bar.y + bar.h)}
+                    colors={[bar.color, '#ffffff50']}
+                />
+            )}
         </RoundedRect>
     );
 };
@@ -66,6 +69,7 @@ export const BarChart: React.FC<BarChartProps> = ({
     roundedTop = true,
     colors = ['#00d2ff', '#3a7bd5'],
     animate = true,
+    showGradient = true,
     showValues = false,
 
     // Axis configuration
@@ -99,9 +103,9 @@ export const BarChart: React.FC<BarChartProps> = ({
     // Grid
     showGrid = true,
 }) => {
-    const topPadding = title ? 40 : 20;
+    const topPadding = title ? 60 : (yAxisTitle ? 40 : 20);
     const bottomPadding = xAxisTitle ? 50 : 30;
-    const leftPadding = yAxisTitle ? 50 : 30;
+    const leftPadding = yAxisTitle ? 60 : 30;
     const rightPadding = 20;
 
     const [selectedBarIndex, setSelectedBarIndex] = useState<number | null>(null);
@@ -197,13 +201,9 @@ export const BarChart: React.FC<BarChartProps> = ({
                 <Text style={[styles.axisTitle, {
                     color: axisTitleColor,
                     fontSize: axisTitleSize,
-                    transform: [{ rotate: '-90deg' }],
-                    left: 5,
-                    top: height / 2,
                     position: 'absolute',
-                    width: height,
-                    textAlign: 'center',
-                    marginLeft: -height / 2 + 10,
+                    left: 2,
+                    top: title ? 35 : 5,
                 }]}>
                     {yAxisTitle}
                 </Text>
@@ -249,6 +249,7 @@ export const BarChart: React.FC<BarChartProps> = ({
                                 progress={progress}
                                 roundedTop={roundedTop}
                                 bottomY={height - bottomPadding}
+                                showGradient={showGradient}
                             />
                         ))}
                     </Canvas>

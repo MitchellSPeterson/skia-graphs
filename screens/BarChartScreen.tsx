@@ -19,6 +19,7 @@ export default function BarChartScreen() {
                 Animated bar chart with bounce effect and full customization.
             </Text>
 
+            <Text style={styles.sectionTitle}>Gradient Bars (Default)</Text>
             <View style={styles.chartContainer}>
                 <BarChart
                     data={data}
@@ -37,12 +38,28 @@ export default function BarChartScreen() {
                 <Text style={styles.buttonText}>Randomize Data</Text>
             </TouchableOpacity>
 
+            <Text style={styles.sectionTitle}>Solid Colors</Text>
+            <View style={styles.chartContainer}>
+                <BarChart
+                    data={data}
+                    width={350}
+                    height={250}
+                    title="Solid Colors"
+                    yAxisTitle="Sales"
+                    xAxisTitle="Day"
+                    showGradient={false}
+                    colors={['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#FF33A8', '#33FFF5', '#FFB833']}
+                    showValues
+                />
+            </View>
+
             <Text style={styles.subtitle}>Features:</Text>
             <Text style={styles.feature}>• Bounce animation on entry/update</Text>
             <Text style={styles.feature}>• Rounded bar tops & Gradient fills</Text>
             <Text style={styles.feature}>• Custom titles and axis labels</Text>
             <Text style={styles.feature}>• Interactive tooltips (tap bar)</Text>
             <Text style={styles.feature}>• Auto-scaling axes</Text>
+            <Text style={styles.feature}>• Solid or Gradient colors</Text>
         </ScrollView>
     );
 }
@@ -97,5 +114,13 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#000',
         fontWeight: 'bold',
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#fff',
+        marginTop: 10,
+        marginBottom: 5,
+        alignSelf: 'flex-start',
     },
 });

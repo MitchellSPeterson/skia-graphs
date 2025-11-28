@@ -78,6 +78,7 @@ An animated bar chart with bounce effects, rounded corners, gradient fills, and 
 | `height` | `number` | `200` | Height of the chart. |
 | `spacing` | `number` | `0.2` | Inner padding between bars (0-1). |
 | `roundedTop` | `boolean` | `true` | Whether bars have rounded tops. |
+| `showGradient` | `boolean` | `true` | Whether to show gradient fill. |
 | `colors` | `string[]` | `['#00d2ff', ...]` | Array of colors to cycle through. |
 | `title` | `string` | `undefined` | Chart title. |
 | `xAxisTitle` | `string` | `undefined` | X-axis title. |
