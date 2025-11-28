@@ -15,13 +15,14 @@ import * as d3Scale from 'd3-scale';
 import * as d3Shape from 'd3-shape';
 import * as d3Array from 'd3-array';
 import { LineGraphProps, GraphPoint } from '../types';
-import { useSharedValue, withTiming, Easing, useDerivedValue, runOnJS, withRepeat, withSequence } from 'react-native-reanimated';
+import { useSharedValue, withTiming, Easing, useDerivedValue, runOnJS, withRepeat, withSequence, useAnimatedProps, useAnimatedStyle } from 'react-native-reanimated';
+import { AnimatedText } from './AnimatedText';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DEFAULT_WIDTH = SCREEN_WIDTH - 32;
 const DEFAULT_HEIGHT = 200;
 
-export const LineGraph: React.FC<LineGraphProps> = ({
+export const LineGraph: React.FC<LineGraphProps> = React.memo(({
     data: incomingData,
     width = DEFAULT_WIDTH,
     height = DEFAULT_HEIGHT,
@@ -61,8 +62,8 @@ export const LineGraph: React.FC<LineGraphProps> = ({
     // Customization
     fillOpacity = 0.2,
     tension = 0.3,
-    xAxisFormatter = (value) => value.toFixed(1),
-    yAxisFormatter = (value) => value.toFixed(1),
+    xAxisFormatter = (value: number) => value.toFixed(1),
+    yAxisFormatter = (value: number) => value.toFixed(1),
     tooltipFormatter,
 
     // Points
@@ -82,8 +83,13 @@ export const LineGraph: React.FC<LineGraphProps> = ({
     const bottomPadding = (showAxis && xAxisTitle) ? 50 : 30;
     const leftPadding = (showAxis && yAxisTitle) ? 60 : 30;
 
-    const [selectedPoint, setSelectedPoint] = useState<GraphPoint | null>(null);
-    const [touchX, setTouchX] = useState<number | null>(null);
+    const touchX = useSharedValue(0);
+    const isActive = useSharedValue(false);
+    const selectedPointX = useSharedValue(0); // Data X
+    const selectedPointY = useSharedValue(0); // Data Y
+    const selectedPointScreenX = useSharedValue(0); // Screen X
+    const selectedPointScreenY = useSharedValue(0); // Screen Y
+    const tooltipText = useSharedValue('');
 
     // State for data buffering to prevent animation flash
     const [data, setData] = useState<GraphPoint[]>(incomingData);
@@ -126,8 +132,9 @@ export const LineGraph: React.FC<LineGraphProps> = ({
     }, [incomingData]);
 
     // Pulsating animation for indicator
+    // Pulsating animation for indicator
     useEffect(() => {
-        if (indicatorPulsating && selectedPoint) {
+        if (indicatorPulsating) {
             pulse.value = withRepeat(
                 withSequence(
                     withTiming(1.5, { duration: 1000 }),
@@ -139,7 +146,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
         } else {
             pulse.value = 1;
         }
-    }, [indicatorPulsating, selectedPoint]);
+    }, [indicatorPulsating]);
 
     const { path, gradientPath, prevPath, prevGradientPath, dotsPath, dotsBorderPath, prevDotsPath, prevDotsBorderPath, dataPoints, xLabels, yLabels } = useMemo(() => {
         if (data.length === 0) {
@@ -324,7 +331,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
     });
 
     // Find point on line for a given X
-    const getPointAtX = useCallback((x: number): GraphPoint | null => {
+    const getPointAtX = useCallback((x: number): { x: number, y: number, screenX: number, screenY: number } | null => {
         const xScale = xScaleRef.current;
         const yScale = yScaleRef.current;
         const measure = pathMeasureRef.current;
@@ -372,7 +379,8 @@ export const LineGraph: React.FC<LineGraphProps> = ({
         return {
             x: xValue,
             y: yValue,
-            // Preserve other properties from closest data point if needed, or just return coordinates
+            screenX: bestPoint.x,
+            screenY: bestPoint.y,
         };
     }, [data]);
 
@@ -385,11 +393,22 @@ export const LineGraph: React.FC<LineGraphProps> = ({
             onMoveShouldSetPanResponder: () => enableScrubbing && !!onPointSelected,
             onPanResponderGrant: (evt) => {
                 const x = evt.nativeEvent.locationX;
-                setTouchX(x);
+                touchX.value = x;
+                isActive.value = true;
                 const point = getPointAtX(x);
 
                 if (point) {
-                    setSelectedPoint(point);
+                    selectedPointX.value = point.x;
+                    selectedPointY.value = point.y;
+                    selectedPointScreenX.value = point.screenX;
+                    selectedPointScreenY.value = point.screenY;
+
+                    // Update tooltip text
+                    const text = tooltipFormatter
+                        ? tooltipFormatter(point)
+                        : `${xAxisFormatter(point.x)}, ${yAxisFormatter(point.y)}`;
+                    tooltipText.value = text;
+
                     if (onPointSelected) {
                         onPointSelected(point);
                     }
@@ -400,20 +419,27 @@ export const LineGraph: React.FC<LineGraphProps> = ({
             },
             onPanResponderMove: (evt) => {
                 const x = evt.nativeEvent.locationX;
-                setTouchX(x);
+                touchX.value = x;
                 const point = getPointAtX(x);
 
                 if (point) {
-                    setSelectedPoint(point);
+                    selectedPointX.value = point.x;
+                    selectedPointY.value = point.y;
+                    selectedPointScreenX.value = point.screenX;
+                    selectedPointScreenY.value = point.screenY;
+
+                    // Update tooltip text
+                    const text = tooltipFormatter
+                        ? tooltipFormatter(point)
+                        : `${xAxisFormatter(point.x)}, ${yAxisFormatter(point.y)}`;
+                    tooltipText.value = text;
+
                     if (onPointSelected) {
                         onPointSelected(point);
                     }
 
                     // Haptics: trigger when passing a data point
                     if (enableHaptics) {
-                        // Find closest data point index
-                        // Assuming data is sorted by x
-                        // We can optimize this, but for now simple search
                         let closestIndex = -1;
                         let minDiff = Number.MAX_VALUE;
 
@@ -425,12 +451,9 @@ export const LineGraph: React.FC<LineGraphProps> = ({
                             }
                         }
 
-                        // If we moved to a new closest point, trigger haptic
-                        // We also check if we are "close enough" to the point to avoid triggering when far?
-                        // Actually, just changing closest index is good for "snapping" feel even if visual is continuous.
                         if (closestIndex !== -1 && closestIndex !== lastHapticIndex.current) {
                             if (onHapticFeedback) {
-                                runOnJS(onHapticFeedback)();
+                                onHapticFeedback();
                             }
                             lastHapticIndex.current = closestIndex;
                         }
@@ -438,16 +461,14 @@ export const LineGraph: React.FC<LineGraphProps> = ({
                 }
             },
             onPanResponderRelease: () => {
-                setTouchX(null);
-                setSelectedPoint(null);
+                isActive.value = false;
                 lastHapticIndex.current = null;
                 if (onPointSelected) {
                     onPointSelected(null);
                 }
             },
             onPanResponderTerminate: () => {
-                setTouchX(null);
-                setSelectedPoint(null);
+                isActive.value = false;
                 lastHapticIndex.current = null;
                 if (onPointSelected) {
                     onPointSelected(null);
@@ -457,19 +478,34 @@ export const LineGraph: React.FC<LineGraphProps> = ({
     ).current;
 
     // Calculate position of selected point indicator
-    const selectedPointPosition = useMemo(() => {
-        const xScale = xScaleRef.current;
-        const yScale = yScaleRef.current;
-        if (!selectedPoint || !xScale || !yScale) return null;
+    const selectedPointPosition = useDerivedValue(() => {
+        if (!isActive.value) return null;
 
         return {
-            x: xScale(selectedPoint.x),
-            y: yScale(selectedPoint.y),
+            x: selectedPointScreenX.value,
+            y: selectedPointScreenY.value,
         };
-    }, [selectedPoint]);
+    });
+
+    const indicatorPath = useDerivedValue(() => {
+        if (!isActive.value || !enableIndicator) return Skia.Path.Make();
+        const path = Skia.Path.Make();
+        path.moveTo(touchX.value, padding);
+        path.lineTo(touchX.value, height - bottomPadding);
+        return path;
+    });
 
     const animatedPulseRadius = useDerivedValue(() => {
         return 8 * pulse.value;
+    });
+
+    const tooltipStyle = useAnimatedStyle(() => {
+        const pos = selectedPointPosition.value;
+        return {
+            opacity: isActive.value && pos ? 1 : 0,
+            left: pos ? pos.x + 15 : 0,
+            top: pos ? pos.y - 24 : 0,
+        };
     });
 
     return (
@@ -570,28 +606,26 @@ export const LineGraph: React.FC<LineGraphProps> = ({
                 )}
 
                 {/* Vertical line at touch position */}
-                {enableIndicator && touchX !== null && (
-                    <Path
-                        path={Skia.Path.Make().moveTo(touchX, padding).lineTo(touchX, height - bottomPadding)}
-                        color="rgba(255, 255, 255, 0.3)"
-                        style="stroke"
-                        strokeWidth={1}
-                    />
-                )}
+                <Path
+                    path={indicatorPath}
+                    color="rgba(255, 255, 255, 0.3)"
+                    style="stroke"
+                    strokeWidth={1}
+                />
 
                 {/* Selected point indicator */}
-                {selectedPointPosition && (
+                {isActive.value && selectedPointPosition.value && (
                     <Group>
                         <Circle
-                            cx={selectedPointPosition.x}
-                            cy={selectedPointPosition.y}
+                            cx={selectedPointPosition.value.x}
+                            cy={selectedPointPosition.value.y}
                             r={animatedPulseRadius}
                             color={color}
                             opacity={0.3}
                         />
                         <Circle
-                            cx={selectedPointPosition.x}
-                            cy={selectedPointPosition.y}
+                            cx={selectedPointPosition.value.x}
+                            cy={selectedPointPosition.value.y}
                             r={4}
                             color={color}
                         />
@@ -599,10 +633,10 @@ export const LineGraph: React.FC<LineGraphProps> = ({
                 )}
 
                 {/* Tooltip Background */}
-                {showTooltip && selectedPoint && selectedPointPosition && (
+                {showTooltip && isActive.value && selectedPointPosition.value && (
                     <RoundedRect
-                        x={selectedPointPosition.x + 10}
-                        y={selectedPointPosition.y - 30}
+                        x={selectedPointPosition.value.x + 10}
+                        y={selectedPointPosition.value.y - 30}
                         width={100}
                         height={25}
                         r={4}
@@ -684,23 +718,18 @@ export const LineGraph: React.FC<LineGraphProps> = ({
             )}
 
             {/* Tooltip Text */}
-            {showTooltip && selectedPoint && selectedPointPosition && (
-                <Text
+            {showTooltip && (
+                <AnimatedText
+                    text={tooltipText}
                     style={[
                         styles.tooltipText,
                         {
                             position: 'absolute',
-                            left: selectedPointPosition.x + 15,
-                            top: selectedPointPosition.y - 24,
                             color: tooltipTextColor,
                         },
+                        tooltipStyle,
                     ]}
-                >
-                    {tooltipFormatter
-                        ? tooltipFormatter(selectedPoint)
-                        : `${xAxisFormatter(selectedPoint.x)}, ${yAxisFormatter(selectedPoint.y)}`
-                    }
-                </Text>
+                />
             )}
 
             {/* Transparent overlay for touch handling */}
@@ -712,7 +741,7 @@ export const LineGraph: React.FC<LineGraphProps> = ({
             )}
         </View>
     );
-};
+});
 
 const styles = StyleSheet.create({
     container: {
