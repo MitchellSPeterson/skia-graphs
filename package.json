@@ -1,5 +1,5 @@
 {
-  "name": "skia-graphs-demo",
+  "name": "prisma-charts",
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {

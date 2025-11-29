@@ -5,12 +5,12 @@ A scatter plot component for visualizing relationships between two variables. Su
 
 ## Import
 ```typescript
-import { ScatterPlot } from 'react-native-skia-graphs';
+import { ScatterPlot } from 'prisma-charts';
 ```
 
 ## Basic Usage
 ```tsx
-import { ScatterPlot } from 'react-native-skia-graphs';
+import { ScatterPlot } from 'prisma-charts';
 
 const data = [
   { x: 10, y: 20 },

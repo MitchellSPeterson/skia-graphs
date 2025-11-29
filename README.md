@@ -1,4 +1,4 @@
-# React Native Skia Graphs
+# Prisma Charts
 
 A modern, high-performance graphing library for React Native, built with [React Native Skia](https://shopify.github.io/react-native-skia/) and [Reanimated](https://docs.swmansion.com/react-native-reanimated/).
 
@@ -12,7 +12,7 @@ A modern, high-performance graphing library for React Native, built with [React 
 ## Installation
 
 ```bash
-npm install react-native-skia-graphs @shopify/react-native-skia react-native-reanimated d3-shape d3-scale d3-array
+npm install prisma-charts @shopify/react-native-skia react-native-reanimated d3-shape d3-scale d3-array
 ```
 
 > **Note**: Make sure to follow the installation instructions for [React Native Skia](https://shopify.github.io/react-native-skia/docs/getting-started/installation) and [Reanimated](https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/installation).
@@ -20,7 +20,7 @@ npm install react-native-skia-graphs @shopify/react-native-skia react-native-rea
 ## Usage
 
 ```tsx
-import { LineGraph, BarChart, PieChart, ScatterPlot } from 'react-native-skia-graphs';
+import { LineGraph, BarChart, PieChart, ScatterPlot } from 'prisma-charts';
 
 // ... see examples below
 ```

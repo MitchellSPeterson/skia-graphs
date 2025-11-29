@@ -5,12 +5,12 @@ A flexible pie/donut chart component with smooth animations. Perfect for display
 
 ## Import
 ```typescript
-import { PieChart } from 'react-native-skia-graphs';
+import { PieChart } from 'prisma-charts';
 ```
 
 ## Basic Usage
 ```tsx
-import { PieChart } from 'react-native-skia-graphs';
+import { PieChart } from 'prisma-charts';
 
 const data = [
   { value: 30, color: '#FF6B6B', label: 'Category A' },

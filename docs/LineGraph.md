@@ -5,12 +5,12 @@ A highly customizable, Chart.js-inspired line graph component with gradient fill
 
 ## Import
 ```typescript
-import { LineGraph } from 'react-native-skia-graphs';
+import { LineGraph } from 'prisma-charts';
 ```
 
 ## Basic Usage
 ```tsx
-import { LineGraph } from 'react-native-skia-graphs';
+import { LineGraph } from 'prisma-charts';
 
 const data = [
   { x: 0, y: 10 },

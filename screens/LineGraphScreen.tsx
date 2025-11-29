@@ -3,8 +3,9 @@ import { View, StyleSheet, ScrollView, Text, Switch, TouchableOpacity } from 're
 import { LineGraph } from '../src/components/LineGraph';
 import { GraphPoint } from '../src/types';
 import * as Haptics from 'expo-haptics';
+import { COLORS } from '../src/theme';
 
-// Generate different datasets
+// ... (generateData and datasets remain unchanged) ...
 const generateData = (seed: number): GraphPoint[] => {
     return Array.from({ length: 20 }, (_, i) => ({
         x: i,
@@ -45,7 +46,6 @@ export default function LineGraphScreen() {
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-            {/* ... (unchanged) ... */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Animated Data Transitions</Text>
                 <Text style={styles.sectionDescription}>
@@ -65,6 +65,7 @@ export default function LineGraphScreen() {
                         pointRadius={3}
                         xAxisFormatter={(v) => `${v.toFixed(0)}s`}
                         yAxisFormatter={(v) => `${v.toFixed(0)}`}
+                        color={COLORS.primary}
                     />
                 </View>
 
@@ -115,6 +116,7 @@ export default function LineGraphScreen() {
                         onPointSelected={setSelectedPoint}
                         xAxisFormatter={(v) => `M${v.toFixed(0)}`}
                         yAxisFormatter={(v) => `$${v.toFixed(0)}`}
+                        color={COLORS.primary}
                     />
                 </View>
 
@@ -151,6 +153,7 @@ export default function LineGraphScreen() {
                         onPointSelected={setSelectedPoint}
                         xAxisFormatter={(v) => `M${v.toFixed(0)}`}
                         yAxisFormatter={(v) => `$${v.toFixed(0)}`}
+                        color={COLORS.secondary}
                     />
                 </View>
 
@@ -273,7 +276,7 @@ export default function LineGraphScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: COLORS.background,
     },
     content: {
         padding: 20,
@@ -281,13 +284,13 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#fff',
+        color: COLORS.text,
         marginBottom: 10,
         textAlign: 'center',
     },
     description: {
         fontSize: 16,
-        color: '#ccc',
+        color: COLORS.textSecondary,
         textAlign: 'center',
         marginBottom: 30,
     },
@@ -297,12 +300,12 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 20,
         fontWeight: '600',
-        color: '#fff',
+        color: COLORS.text,
         marginBottom: 5,
     },
     sectionDescription: {
         fontSize: 14,
-        color: '#999',
+        color: COLORS.textSecondary,
         marginBottom: 15,
         fontStyle: 'italic',
     },
@@ -320,16 +323,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 8,
-        backgroundColor: '#2a2a2a',
+        backgroundColor: COLORS.card,
         borderWidth: 1,
-        borderColor: '#444',
+        borderColor: COLORS.border,
     },
     datasetButtonActive: {
-        backgroundColor: '#00d2ff',
-        borderColor: '#00d2ff',
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
     },
     datasetButtonText: {
-        color: '#999',
+        color: COLORS.textSecondary,
         fontSize: 14,
         fontWeight: '600',
     },
@@ -337,28 +340,28 @@ const styles = StyleSheet.create({
         color: '#000',
     },
     selectedPointInfo: {
-        backgroundColor: '#1a1a1a',
+        backgroundColor: COLORS.card,
         padding: 15,
         borderRadius: 8,
         marginTop: 10,
         borderWidth: 1,
-        borderColor: '#00d2ff',
+        borderColor: COLORS.primary,
     },
     selectedPointText: {
-        color: '#00d2ff',
+        color: COLORS.primary,
         fontSize: 16,
         fontWeight: '600',
     },
     subtitle: {
         fontSize: 20,
         fontWeight: '600',
-        color: '#fff',
+        color: COLORS.text,
         marginTop: 20,
         marginBottom: 10,
     },
     feature: {
         fontSize: 16,
-        color: '#aaa',
+        color: COLORS.textSecondary,
         marginBottom: 5,
     },
     note: {
@@ -367,16 +370,16 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         marginTop: 30,
         borderLeftWidth: 4,
-        borderLeftColor: '#00d2ff',
+        borderLeftColor: COLORS.primary,
     },
     noteTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#00d2ff',
+        color: COLORS.primary,
         marginBottom: 10,
     },
     noteText: {
-        color: '#ccc',
+        color: COLORS.textSecondary,
         fontSize: 14,
         lineHeight: 22,
     },

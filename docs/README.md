@@ -1,6 +1,6 @@
 # API Documentation Index
 
-Welcome to the React Native Skia Graphs API documentation. This library provides high-performance, GPU-accelerated chart components for React Native.
+Welcome to the Prisma Charts API documentation. This library provides high-performance, GPU-accelerated chart components for React Native.
 
 ## Available Components
 
@@ -61,13 +61,13 @@ Scatter plots for visualizing relationships between variables.
 ### Installation
 
 ```bash
-npm install react-native-skia-graphs @shopify/react-native-skia react-native-reanimated
+npm install prisma-charts @shopify/react-native-skia react-native-reanimated
 ```
 
 ### Basic Example
 
 ```tsx
-import { LineGraph } from 'react-native-skia-graphs';
+import { LineGraph } from 'prisma-charts';
 
 const data = [
   { x: 0, y: 10 },
@@ -95,7 +95,7 @@ All chart components share some common optional props:
 All components are fully typed with TypeScript. Import types from the package:
 
 ```typescript
-import { GraphPoint, PieChartData, LineGraphProps } from 'react-native-skia-graphs';
+import { GraphPoint, PieChartData, LineGraphProps } from 'prisma-charts';
 ```
 
 ## Performance
@@ -114,7 +114,7 @@ This library is designed for React Native and requires:
 
 ## Contributing
 
-Found a bug or want to contribute? Check out our [GitHub repository](https://github.com/yourusername/react-native-skia-graphs).
+Found a bug or want to contribute? Check out our [GitHub repository](https://github.com/yourusername/prisma-charts).
 
 ## License
 

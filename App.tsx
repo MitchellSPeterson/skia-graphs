@@ -3,6 +3,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { StatusBar } from 'expo-status-bar';
+import { COLORS } from './src/theme';
 
 import HomeScreen from './screens/HomeScreen';
 import LineGraphScreen from './screens/LineGraphScreen';
@@ -20,14 +21,17 @@ export default function App() {
         initialRouteName="Home"
         screenOptions={{
           drawerStyle: {
-            backgroundColor: '#1a1a1a',
+            backgroundColor: COLORS.card,
           },
-          drawerActiveTintColor: '#00d2ff',
-          drawerInactiveTintColor: '#ccc',
+          drawerActiveTintColor: COLORS.primary,
+          drawerInactiveTintColor: COLORS.textSecondary,
           headerStyle: {
-            backgroundColor: '#1a1a1a',
+            backgroundColor: COLORS.background,
+            borderBottomColor: COLORS.border,
+            borderBottomWidth: 1,
+            shadowColor: 'transparent',
           },
-          headerTintColor: '#fff',
+          headerTintColor: COLORS.text,
           headerTitleStyle: {
             fontWeight: 'bold',
           },
@@ -38,7 +42,7 @@ export default function App() {
           component={HomeScreen}
           options={{
             drawerLabel: '🏠 Home',
-            title: 'Skia Graphs Demo',
+            title: 'Prisma Charts',
           }}
         />
         <Drawer.Screen

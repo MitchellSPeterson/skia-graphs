@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { ScatterPlot } from '../src';
+import { COLORS } from '../src/theme';
 
 const scatterData = Array.from({ length: 30 }, () => ({
     x: Math.random() * 100,
@@ -32,7 +33,7 @@ export default function ScatterPlotScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: COLORS.background,
     },
     content: {
         padding: 20,
@@ -41,12 +42,12 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#fff',
+        color: COLORS.text,
         marginBottom: 10,
     },
     description: {
         fontSize: 16,
-        color: '#ccc',
+        color: COLORS.textSecondary,
         textAlign: 'center',
         marginBottom: 30,
     },
@@ -56,14 +57,14 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: 20,
         fontWeight: '600',
-        color: '#fff',
+        color: COLORS.text,
         marginTop: 20,
         marginBottom: 10,
         alignSelf: 'flex-start',
     },
     feature: {
         fontSize: 16,
-        color: '#aaa',
+        color: COLORS.textSecondary,
         marginBottom: 5,
         alignSelf: 'flex-start',
     },

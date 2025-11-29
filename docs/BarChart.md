@@ -5,12 +5,12 @@ An animated bar chart component with rounded corners and gradient fills. Ideal f
 
 ## Import
 ```typescript
-import { BarChart } from 'react-native-skia-graphs';
+import { BarChart } from 'prisma-charts';
 ```
 
 ## Basic Usage
 ```tsx
-import { BarChart } from 'react-native-skia-graphs';
+import { BarChart } from 'prisma-charts';
 
 const data = [
   { x: 0, y: 50, color: '#FF6B6B' },
